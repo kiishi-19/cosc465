@@ -6,19 +6,30 @@ const form = document.getElementById('form');
 const text = document.getElementById('text');
 const amount = document.getElementById('amount');
 
-// const dummyTransactions = [
-//   { id: 1, text: 'Flower', amount: -20 },
-//   { id: 2, text: 'Salary', amount: 300 },
-//   { id: 3, text: 'Book', amount: -10 },
-//   { id: 4, text: 'Camera', amount: 150 }
-// ];
+// Login elements
+const loginSection = document.getElementById('login-section');
+const appSection = document.getElementById('app-section');
+const loginBtn = document.getElementById('login-btn');
+const userNameSpan = document.getElementById('user-name');
+const usernameInput = document.getElementById('username');
 
-const localStorageTransactions = JSON.parse(
-  localStorage.getItem('transactions')
-);
+let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+let currentUser = localStorage.getItem('currentUser');
 
-let transactions =
-  localStorage.getItem('transactions') !== null ? localStorageTransactions : [];
+// Handle Login
+loginBtn.addEventListener('click', () => {
+  const username = usernameInput.value.trim();
+  if (username) {
+    currentUser = username;
+    localStorage.setItem('currentUser', username);
+    userNameSpan.textContent = username;
+    loginSection.style.display = 'none';
+    appSection.style.display = 'block';
+    init();
+  } else {
+    alert('Please enter a username!');
+  }
+});
 
 // Add transaction
 function addTransaction(e) {
@@ -30,7 +41,7 @@ function addTransaction(e) {
     const transaction = {
       id: generateID(),
       text: text.value,
-      amount: +amount.value
+      amount: +amount.value,
     };
 
     transactions.push(transaction);
@@ -53,38 +64,32 @@ function generateID() {
 
 // Add transactions to DOM list
 function addTransactionDOM(transaction) {
-  // Get sign
   const sign = transaction.amount < 0 ? '-' : '+';
 
   const item = document.createElement('li');
-
-  // Add class based on value
   item.classList.add(transaction.amount < 0 ? 'minus' : 'plus');
 
   item.innerHTML = `
-    ${transaction.text} <span>${sign}${Math.abs(
-    transaction.amount
-  )}</span> <button class="delete-btn" onclick="removeTransaction(${
-    transaction.id
-  })">x</button>
+    ${transaction.text} <span>${sign}${Math.abs(transaction.amount)}</span>
+    <button class="delete-btn" onclick="removeTransaction(${transaction.id})">x</button>
   `;
 
   list.appendChild(item);
 }
 
-// Update the balance, income and expense
+// Update the balance, income, and expense
 function updateValues() {
-  const amounts = transactions.map(transaction => transaction.amount);
+  const amounts = transactions.map((transaction) => transaction.amount);
 
   const total = amounts.reduce((acc, item) => (acc += item), 0).toFixed(2);
 
   const income = amounts
-    .filter(item => item > 0)
+    .filter((item) => item > 0)
     .reduce((acc, item) => (acc += item), 0)
     .toFixed(2);
 
   const expense = (
-    amounts.filter(item => item < 0).reduce((acc, item) => (acc += item), 0) *
+    amounts.filter((item) => item < 0).reduce((acc, item) => (acc += item), 0) *
     -1
   ).toFixed(2);
 
@@ -95,7 +100,7 @@ function updateValues() {
 
 // Remove transaction by ID
 function removeTransaction(id) {
-  transactions = transactions.filter(transaction => transaction.id !== id);
+  transactions = transactions.filter((transaction) => transaction.id !== id);
 
   updateLocalStorage();
 
@@ -110,11 +115,16 @@ function updateLocalStorage() {
 // Init app
 function init() {
   list.innerHTML = '';
-
   transactions.forEach(addTransactionDOM);
   updateValues();
 }
 
-init();
+// Initialize if user is already logged in
+if (currentUser) {
+  userNameSpan.textContent = currentUser;
+  loginSection.style.display = 'none';
+  appSection.style.display = 'block';
+  init();
+}
 
 form.addEventListener('submit', addTransaction);
